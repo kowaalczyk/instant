@@ -1,0 +1,28 @@
+use std::str::FromStr;
+use crate::ast::{Opcode, Expr, Stmt};
+
+grammar;
+
+pub Stmt: Box<Stmt> = {
+    <e:EAdd> ";" => Box::new(Stmt::Expr { expr: e }),
+};
+
+EAdd: Box<Expr> = {
+    <e:EMul> => Box::new(Expr::Nested { expr:e }),
+    <l:EMul> "+" <r:EAdd> => Box::new(Expr::Binary { left:l, op: Opcode::Add, right:r }),
+    <l:EMul> "-" <r:EAdd> => Box::new(Expr::Binary { left:l, op: Opcode::Sub, right:r }),
+};
+
+EMul: Box<Expr> = {
+    <e:ESingle> => Box::new(Expr::Nested {expr:e}),
+    <l:ESingle> "*" <r:EMul> => Box::new(Expr::Binary { left:l, op: Opcode::Mul, right:r }),
+};
+
+ESingle: Box<Expr> = {
+    "(" <e:EAdd> ")" => Box::new(Expr::Nested { expr: e }),
+    <n:Num> => Box::new(Expr::Number { val: n }),
+};
+
+Num: i32 = {
+    r"[0-9]+" => i32::from_str(<>).unwrap(),
+};
