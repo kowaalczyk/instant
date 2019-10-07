@@ -1,14 +1,10 @@
 [package]
-name = "calculator"
+name = "calculator-compiler"
 version = "0.1.0"
 authors = ["Krzysztof Kowalczyk <k.kowaalczyk@gmail.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[workspace]
-members = [".", "parser", "compiler"]
-
 [dependencies]
-calculator-parser = {path = "parser", version = "0.1.0"}
-calculator-compiler = {path = "compiler", version = "0.1.0"}
+calculator-parser = {path = "../parser", version = "0.1.0"}

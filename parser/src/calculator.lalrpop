@@ -1,7 +1,14 @@
 use std::str::FromStr;
-use crate::ast::{Opcode, Expr, Stmt};
+use std::iter::FromIterator;
+use crate::ast::{Opcode, Expr, Stmt, Prog};
 
 grammar;
+
+pub Prog: Prog = {
+    <statements:Stmt*> => Prog {
+        stmts: Vec::from_iter(statements.into_iter()),
+    },
+}
 
 pub Stmt: Box<Stmt> = {
     <e:EAdd> ";" => Box::new(Stmt::Expr { expr: e }),

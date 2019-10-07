@@ -19,3 +19,8 @@ pub enum Stmt {
     Expr { expr: Box<Expr> },
     // TODO: declaration
 }
+
+#[derive(Debug)]
+pub struct Prog {
+    pub stmts: Vec<Box<Stmt>>,
+}
