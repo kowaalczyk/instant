@@ -1,0 +1,90 @@
+use std::str::FromStr;
+use std::iter::FromIterator;
+use crate::ast::{Opcode, Expr, Stmt, Prog};
+
+grammar;
+
+// macro for generating items, similar to the Separator from BNFC
+Separated<Sep, T>: Vec<T> = {
+    <v:(<T> Sep)*> <e:T?> => match e {
+        None => v,
+        Some(e) => {
+            let mut v = v;
+            v.push(e);
+            v
+        }
+    }
+};
+
+pub Prog: Prog = {
+    <statements:Stmts> => {
+        Prog {
+            stmts: Vec::from_iter(statements.into_iter()),
+        }
+    },
+};
+
+Stmts = Separated<";", Stmt>;
+
+pub Stmt: Box<Stmt> = {
+    <e:Expr1> => {
+        Box::new(Stmt::Expr { expr: e })
+    },
+    <i:Ident> "=" <e:Expr1> => {
+        Box::new(Stmt::Decl { var: i, expr: e })
+    },
+};
+
+Expr1: Box<Expr> = {
+    <l:Expr2> "+" <r:Expr1> => {
+        Box::new(Expr::Binary {
+            left: l,
+            op: Opcode::Add,
+            right:r,
+        })
+    },
+    <e:Expr2> => (<>),
+};
+
+Expr2: Box<Expr> = {
+    <l:Expr2> "-" <r:Expr3> => {
+        Box::new(Expr::Binary {
+            left: l,
+            op: Opcode::Sub,
+            right:r,
+        })
+    },
+    <e:Expr3> => (<>),
+};
+
+Expr3: Box<Expr> = {
+    <l:Expr3> "*" <r:Expr4> => {
+        Box::new(Expr::Binary {
+            left: l,
+            op: Opcode::Mul,
+            right:r,
+        })
+    },
+    <l:Expr3> "/" <r:Expr4> => {
+        Box::new(Expr::Binary {
+            left: l,
+            op: Opcode::Div,
+            right:r,
+        })
+    },
+    <e:Expr4> => (<>),
+};
+
+Expr4: Box<Expr> = {
+    <n:Num> => Box::new(Expr::Number { val: n }),
+    <i:Ident> => Box::new(Expr::Variable { var: i }),
+    "(" <e:Expr1> ")" => (<>),
+};
+
+Ident: String = {
+    r"[a-zA-Z_][a-zA-Z_0-9]*" => String::from(<>),
+};
+
+Num: i32 = {
+    r"[0-9]+" => i32::from_str(<>).unwrap(),  // no negative numbers, just as the LBNF Integer
+};

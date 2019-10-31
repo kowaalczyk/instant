@@ -1,23 +1,26 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Opcode {
     Add,
     Sub,
     Mul,
-    // TODO: Div
+    Div,
 }
 
 #[derive(Debug)]
 pub enum Expr {
-    Binary { left: Box<Expr>, op: Opcode, right: Box<Expr> },
-    Nested { expr: Box<Expr> },
-    Number { val: i32 },  // TODO: Parse minus if present before the int
-    // TODO: variables
+    Binary {
+        left: Box<Expr>,
+        op: Opcode,
+        right: Box<Expr>,
+    },
+    Number { val: i32 },
+    Variable { var: String },
 }
 
 #[derive(Debug)]
 pub enum Stmt {
     Expr { expr: Box<Expr> },
-    // TODO: declaration
+    Decl { var: String, expr: Box<Expr> },
 }
 
 #[derive(Debug)]

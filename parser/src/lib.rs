@@ -1,7 +1,7 @@
-// use lalrpop_util::lalrpop_mod;  // use with new lalrpop behaviour instead of pub mod calculator
+// use lalrpop_util::lalrpop_mod;  // use with new lalrpop behaviour instead of pub mod instant
 
 pub mod ast;
-pub mod calculator;
+pub mod instant;
 
 #[cfg(test)]
 mod tests {

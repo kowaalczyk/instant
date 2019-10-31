@@ -1,75 +1,174 @@
-/*
-Compiles calculator code to a simple stack-based vm:
-PUSH
-ADD
-SUB
-MUL
-PRINT
-*/
+use instant_parser::ast;
 
-use calculator_parser::ast;
-
-// TODO: Add proper error handling to the compiler
+use std::collections::HashMap;
+use std::cmp::max;
+use std::fmt::Debug;
 
 #[derive(Debug)]
-pub enum Command {
+pub enum Instruction {
     PUSH { val: i32 },
     ADD,
     SUB,
     MUL,
-    PRINT
+    DIV,
+    PRINT,
+    STORE { addr: i32 },
+    LOAD { addr: i32 },
+    SWAP,
 }
 
-pub fn compile(program: &ast::Prog) -> Result<Vec<Command>, String> {
-    let mut result: Vec<Command> = vec![];
-    for stmt in program.stmts.iter() {
-        let mut compiled_stmt = compile_stmt(stmt.as_ref())?;
-        result.append(&mut compiled_stmt);
+#[derive(Debug)]
+pub enum CompilationError {
+    UndefinedVariable { identifier: String },
+}
+
+#[derive(Debug)]
+pub struct CompiledCode {
+    pub instructions: Vec<Instruction>,
+    pub stack_limit: u32,
+    pub locals_limit: u32,
+}
+
+pub trait CompileStack {
+    fn compile(&self, env: &mut HashMap<String, i32>) -> Result<CompiledCode, CompilationError>;
+}
+
+impl CompileStack for ast::Prog {
+    fn compile(&self, env: &mut HashMap<String, i32>) -> Result<CompiledCode, CompilationError> {
+        let mut instructions: Vec<Instruction> = vec![];
+        let mut stack_limit = 0;
+        for stmt in self.stmts.iter() {
+            let mut compiled_stmt = stmt.compile(env)?;
+            instructions.append(&mut compiled_stmt.instructions);
+            stack_limit = max(stack_limit, compiled_stmt.stack_limit);
+        }
+        let locals_limit = env.len() as u32;
+        let compiled_program = CompiledCode { instructions, stack_limit, locals_limit };
+        Ok(compiled_program)
     }
-    Ok(result)
 }
 
-fn compile_stmt(stmt: &ast::Stmt) -> Result<Vec<Command>, String> {
-    match stmt {
-        ast::Stmt::Expr {expr} => {
-            let mut compiled_expr = compile_expr(expr.as_ref())?;
-            compiled_expr.push(Command::PRINT);
-            Ok(compiled_expr)
-        },
-    }
-}
+impl CompileStack for ast::Stmt {
+    fn compile(&self, env: &mut HashMap<String, i32>) -> Result<CompiledCode, CompilationError> {
+        match self {
+            ast::Stmt::Expr {expr} => {
+                let mut compiled_expr = expr.compile(env)?;
+                compiled_expr.instructions.push(Instruction::PRINT);
 
-fn compile_expr(expr: &ast::Expr) -> Result<Vec<Command>, String> {
-    match expr {
-        ast::Expr::Number {val} => {
-            let command = Command::PUSH {val: *val};
-            Ok(vec![command])
-        },
-        ast::Expr::Nested {expr} => {
-            compile_expr(expr.as_ref())
-        },
-        ast::Expr::Binary {left, op, right} => {
-            let mut commands: Vec<Command> = vec![];
-            // TODO: Optimize order of evaluation (lhs vs rhs - deeper first to limit stack size)
+                // stack limit is increased by 1 to account for the 1st argument to print
+                let compiled_stmt = CompiledCode {
+                    instructions: compiled_expr.instructions,
+                    stack_limit: 1 + compiled_expr.stack_limit,
+                    locals_limit: compiled_expr.locals_limit,
+                };
+                Ok(compiled_stmt)
+            },
+            ast::Stmt::Decl {var, expr} => {
+                let mut compiled_expr = expr.compile(env)?;
+                let variable_location = match env.get(var) {
+                    Some(existing_location) => *existing_location,
+                    None => {
+                        let new_location = match env.values().max() {
+                            Some(last_used_location) => last_used_location + 1,
+                            None => 0,
+                        };
+                        env.insert(var.clone(), new_location);
+                        // TODO: This is hacky, store as separate variable
+                        compiled_expr.locals_limit += 1;
+                        new_location
+                    }
+                };
 
-            let mut lhs = compile_expr(left.as_ref())?;
-            commands.append(&mut lhs);
+                // TODO: This is hacky, store as separate variable
+                let store_command = Instruction::STORE { addr: variable_location };
+                compiled_expr.instructions.push(store_command);
 
-            let mut rhs = compile_expr(right.as_ref())?;
-            commands.append(&mut rhs);
-
-            match op {
-                ast::Opcode::Add => {
-                    commands.push(Command::ADD);
-                },
-                ast::Opcode::Sub => {
-                    commands.push(Command::SUB);
-                },
-                ast::Opcode::Mul => {
-                    commands.push(Command::MUL);
-                }
-            };
-            Ok(commands)
+                let compiled_stmt = CompiledCode {
+                    instructions: compiled_expr.instructions,
+                    stack_limit: compiled_expr.stack_limit,
+                    locals_limit: compiled_expr.locals_limit
+                };
+                Ok(compiled_stmt)
+            }
         }
     }
+}
+
+impl CompileStack for ast::Expr {
+    fn compile(&self, env: &mut HashMap<String, i32>) -> Result<CompiledCode, CompilationError> {
+        match self {
+            ast::Expr::Number {val} => {
+                let instruction = Instruction::PUSH {val: *val};
+                let compiled_code = CompiledCode {
+                    instructions: vec![instruction],
+                    stack_limit: 1,
+                    locals_limit: 0
+                };
+                Ok(compiled_code)
+            },
+            ast::Expr::Variable {var} => {
+                match env.get(var) {
+                    Option::None => {
+                        Err(CompilationError::UndefinedVariable { identifier: var.to_string() })
+                    },
+                    Option::Some(variable_address) => {
+                        let instruction = Instruction::LOAD {addr: *variable_address};
+                        let compiled_code = CompiledCode {
+                            instructions: vec![instruction],
+                            stack_limit: 1,
+                            locals_limit: 1,
+                        };
+                        Ok(compiled_code)
+                    }
+                }
+            },
+            ast::Expr::Binary {left, op, right} => {
+                let mut lhs = left.compile(env)?;
+                let mut rhs = right.compile(env)?;
+
+                let mut instructions: Vec<Instruction> = vec![];
+                if lhs.stack_limit >= rhs.stack_limit {
+                    instructions.append(&mut lhs.instructions);
+                    instructions.append(&mut rhs.instructions);
+                } else {
+                    instructions.append(&mut rhs.instructions);
+                    instructions.append(&mut lhs.instructions);
+
+                    if *op == ast::Opcode::Sub || *op == ast::Opcode::Div {
+                        instructions.push(Instruction::SWAP);
+                    }
+                }
+
+                match op {
+                    ast::Opcode::Add => {
+                        instructions.push(Instruction::ADD);
+                    },
+                    ast::Opcode::Sub => {
+                        instructions.push(Instruction::SUB);
+                    },
+                    ast::Opcode::Mul => {
+                        instructions.push(Instruction::MUL);
+                    },
+                    ast::Opcode::Div => {
+                        instructions.push(Instruction::DIV)
+                    }
+                };
+
+                let compiled_code = CompiledCode {
+                    instructions,
+                    stack_limit: 1 + max(lhs.stack_limit, rhs.stack_limit),
+                    locals_limit: env.len() as u32,
+                };
+                Ok(compiled_code)
+            },
+        }
+    }
+}
+
+
+/// compiles the program to a list of instructions on abstract stack-based machine
+pub fn compile(program: &ast::Prog) -> Result<CompiledCode, CompilationError> {
+    let mut env: HashMap<String, i32> = HashMap::new();
+    let compiled_program = program.compile(&mut env)?;
+    Ok(compiled_program)
 }

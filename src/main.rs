@@ -1,9 +1,9 @@
 use std::{fs, env, process::exit};
-use calculator_parser::{ast, calculator};
-use calculator_compiler::stack::compile;
+use instant_parser::{ast, instant};
+use instant_compiler::stack::compile;
 
 fn parse_str(source: &String) -> ast::Prog {
-    let parser = calculator::ProgParser::new();
+    let parser = instant::ProgParser::new();
     parser.parse(&source)
         .expect("parsing error")
 }
@@ -18,8 +18,8 @@ fn main() {
         .expect("Cannot read file");
 
     let ast = parse_str(&unparsed_file);
-    println!("{:#?}", &ast);
+//    println!("{:#?}", &ast);
 
-    let compiled_commands = compile(&ast);
-    println!("{:#?}", &compiled_commands);
+    let compiled_program = compile(&ast);
+    println!("{:#?}", &compiled_program);
 }

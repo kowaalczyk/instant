@@ -1,5 +1,5 @@
 [package]
-name = "calculator-parser"
+name = "instant-parser"
 version = "0.1.0"
 authors = ["Krzysztof Kowalczyk <k.kowaalczyk@gmail.com>"]
 edition = "2018"

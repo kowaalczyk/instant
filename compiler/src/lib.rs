@@ -1,4 +1,6 @@
 pub mod stack;
+pub mod jasmin;
+pub mod llvm;
 
 #[cfg(test)]
 mod tests {
