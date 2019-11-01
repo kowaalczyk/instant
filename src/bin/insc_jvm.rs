@@ -1,6 +1,6 @@
 use std::{fs, process::exit, path::Path, process::Command};
 use instant_parser::ast;
-use instant_compiler::stack::{compile};
+use instant_compiler::stack::{compile_stack};
 use instant_compiler::jasmin::translate;
 use instant_utils::{parse_arg, parse_env, parse_program, write_file, check_exit_code};
 
@@ -8,7 +8,7 @@ use instant_utils::{parse_arg, parse_env, parse_program, write_file, check_exit_
 fn compile_jasmin_file(
     parsed_ast: &ast::Prog, jasmin_output_dir: &String, java_class_name: &String
 ) {
-    let compiled_program = match compile(&parsed_ast) {
+    let compiled_program = match compile_stack(&parsed_ast) {
         Ok(stack_representation) => stack_representation,
         Err(e) => {
             println!("Failed to compile: {:?}", e);

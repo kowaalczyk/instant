@@ -26,15 +26,15 @@ pub struct CompiledCode {
 }
 
 pub trait CompileStack {
-    fn compile(&self, env: &mut HashMap<String, i32>) -> Result<CompiledCode, CompilationError>;
+    fn compile_stack(&self, env: &mut HashMap<String, i32>) -> Result<CompiledCode, CompilationError>;
 }
 
 impl CompileStack for ast::Prog {
-    fn compile(&self, env: &mut HashMap<String, i32>) -> Result<CompiledCode, CompilationError> {
+    fn compile_stack(&self, env: &mut HashMap<String, i32>) -> Result<CompiledCode, CompilationError> {
         let mut instructions: Vec<Instruction> = vec![];
         let mut stack_limit = 0;
         for stmt in self.stmts.iter() {
-            let mut compiled_stmt = stmt.compile(env)?;
+            let mut compiled_stmt = stmt.compile_stack(env)?;
             instructions.append(&mut compiled_stmt.instructions);
             stack_limit = max(stack_limit, compiled_stmt.stack_limit);
         }
@@ -45,10 +45,10 @@ impl CompileStack for ast::Prog {
 }
 
 impl CompileStack for ast::Stmt {
-    fn compile(&self, env: &mut HashMap<String, i32>) -> Result<CompiledCode, CompilationError> {
+    fn compile_stack(&self, env: &mut HashMap<String, i32>) -> Result<CompiledCode, CompilationError> {
         match self {
             ast::Stmt::Expr {expr} => {
-                let mut compiled_expr = expr.compile(env)?;
+                let mut compiled_expr = expr.compile_stack(env)?;
                 compiled_expr.instructions.push(Instruction::PRINT);
 
                 // stack limit is increased by 1 to account for the 1st argument to print
@@ -60,7 +60,7 @@ impl CompileStack for ast::Stmt {
                 Ok(compiled_stmt)
             },
             ast::Stmt::Decl {var, expr} => {
-                let mut compiled_expr = expr.compile(env)?;
+                let mut compiled_expr = expr.compile_stack(env)?;
                 let variable_location = match env.get(var) {
                     Some(existing_location) => *existing_location,
                     None => {
@@ -91,7 +91,7 @@ impl CompileStack for ast::Stmt {
 }
 
 impl CompileStack for ast::Expr {
-    fn compile(&self, env: &mut HashMap<String, i32>) -> Result<CompiledCode, CompilationError> {
+    fn compile_stack(&self, env: &mut HashMap<String, i32>) -> Result<CompiledCode, CompilationError> {
         match self {
             ast::Expr::Number {val} => {
                 let instruction = Instruction::PUSH {val: *val};
@@ -119,8 +119,8 @@ impl CompileStack for ast::Expr {
                 }
             },
             ast::Expr::Binary {left, op, right} => {
-                let mut lhs = left.compile(env)?;
-                let mut rhs = right.compile(env)?;
+                let mut lhs = left.compile_stack(env)?;
+                let mut rhs = right.compile_stack(env)?;
 
                 let mut instructions: Vec<Instruction> = vec![];
                 if lhs.stack_limit >= rhs.stack_limit {
@@ -163,8 +163,8 @@ impl CompileStack for ast::Expr {
 
 
 /// compiles the program to a list of instructions on abstract stack-based machine
-pub fn compile(program: &ast::Prog) -> Result<CompiledCode, CompilationError> {
+pub fn compile_stack(program: &ast::Prog) -> Result<CompiledCode, CompilationError> {
     let mut env: HashMap<String, i32> = HashMap::new();
-    let compiled_program = program.compile(&mut env)?;
+    let compiled_program = program.compile_stack(&mut env)?;
     Ok(compiled_program)
 }
