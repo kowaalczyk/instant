@@ -69,13 +69,11 @@ impl CompileStack for ast::Stmt {
                             None => 0,
                         };
                         env.insert(var.clone(), new_location);
-                        // TODO: This is hacky, store as separate variable
                         compiled_expr.locals_limit += 1;
                         new_location
                     }
                 };
 
-                // TODO: This is hacky, store as separate variable
                 let store_command = Instruction::STORE { addr: variable_location };
                 compiled_expr.instructions.push(store_command);
 
