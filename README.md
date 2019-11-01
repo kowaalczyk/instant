@@ -152,10 +152,7 @@ Common utility methods for these executables are grouped in `src/lib.rs`.
 
 ### External resources
 
-I also packaged `e2e_tests` for testing and demonstration purposes, as well as
+Together with my compiler, I also packaged `e2e_tests` for testing and demonstration purposes, as well as
 the `dist` folder containing utilities necessary to translate compiled code to final executable representation.
 
-None of these files are my work:
-* `dist` files were supplied for the purposes of earlier labs
-* `e2e_tests` were supplied together with assignment description
-
+Files contained within these two folders were not created by me.
