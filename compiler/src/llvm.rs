@@ -169,7 +169,7 @@ impl FormatLLVM for ast::Opcode {
             ast::Opcode::Add => {"add i32"},
             ast::Opcode::Sub => {"sub i32"},
             ast::Opcode::Mul => {"mul i32"},
-            ast::Opcode::Div => {"div i32"},
+            ast::Opcode::Div => {"sdiv i32"},
         };
         String::from(op_str)
     }

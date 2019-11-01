@@ -9,7 +9,7 @@ impl JVMOutput for CompiledCode {
         let mut instruction_vec: Vec<String> = vec![
             String::from(".method public static main([Ljava/lang/String;)V"),
             format!(".limit stack {}", self.stack_limit),
-            format!(".limit locals {}", self.locals_limit),
+            format!(".limit locals {}", self.locals_limit + 1), // +1 local for main argument
         ];
 
         for instr in self.instructions.iter() {

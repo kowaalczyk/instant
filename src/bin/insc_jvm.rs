@@ -1,4 +1,4 @@
-use std::{fs, process::exit, path::Path, io::Write, process::Command};
+use std::{fs, process::exit, path::Path, process::Command};
 use instant_parser::ast;
 use instant_compiler::stack::{compile};
 use instant_compiler::jasmin::translate;
