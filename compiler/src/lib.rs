@@ -2,6 +2,8 @@ pub mod stack;
 pub mod jasmin;
 pub mod llvm;
 
+mod common;
+
 #[cfg(test)]
 mod tests {
     #[test]

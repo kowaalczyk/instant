@@ -1,4 +1,5 @@
 use instant_parser::ast;
+use crate::common::CompilationError;
 
 use std::collections::HashMap;
 use std::cmp::max;
@@ -15,11 +16,6 @@ pub enum Instruction {
     STORE { addr: i32 },
     LOAD { addr: i32 },
     SWAP,
-}
-
-#[derive(Debug)]
-pub enum CompilationError {
-    UndefinedVariable { identifier: String },
 }
 
 #[derive(Debug)]
@@ -109,7 +105,7 @@ impl CompileStack for ast::Expr {
             ast::Expr::Variable {var} => {
                 match env.get(var) {
                     Option::None => {
-                        Err(CompilationError::UndefinedVariable { identifier: var.to_string() })
+                        Err(CompilationError::UnidentifiedVariable { identifier: var.to_string() })
                     },
                     Option::Some(variable_address) => {
                         let instruction = Instruction::LOAD {addr: *variable_address};
