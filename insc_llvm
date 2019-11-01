@@ -2,8 +2,9 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+
 export LLVM_ASSEMBLER=llvm-as
 export LLVM_LINKER=llvm-link
 export LLVM_RUNTIME=dist/runtime.bc
 
-cargo run --release --package instant --bin insc_llvm "$1"
+cargo run --release --package instant --bin insc_llvm $@

@@ -3,8 +3,8 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # shellcheck disable=SC2155
-# this script is intended to run on OSX by default, comment this line out to run on linux
-export PATH="$PATH:$(brew --prefix llvm)/bin"
+# uncomment the line below to use llvm tools installed via homebrew on OSX:
+#export PATH="$PATH:$(brew --prefix llvm)/bin"
 
 for infile in e2e_test/*.ins; do
   echo "$infile"

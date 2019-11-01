@@ -4,4 +4,4 @@ IFS=$'\n\t'
 
 export JASMIN_COMPILER=dist/jasmin.jar
 
-cargo run --release --package instant --bin insc_jvm "$1"
+cargo run --release --package instant --bin insc_jvm $@
