@@ -2,7 +2,7 @@ use instant_parser::ast;
 use crate::common::CompilationError;
 
 use std::collections::HashMap;
-use std::cmp::max;
+use std::cmp::{min, max};
 use std::fmt::Debug;
 
 #[derive(Debug)]
@@ -150,7 +150,10 @@ impl CompileStack for ast::Expr {
 
                 let compiled_code = CompiledCode {
                     instructions,
-                    stack_limit: 1 + max(lhs.stack_limit, rhs.stack_limit),
+                    stack_limit: max(
+                        1 + min(lhs.stack_limit, rhs.stack_limit),
+                        max(lhs.stack_limit, rhs.stack_limit)
+                    ),
                     locals_limit: env.len() as u32,
                 };
                 Ok(compiled_code)
